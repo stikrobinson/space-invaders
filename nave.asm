@@ -7,47 +7,81 @@
    lw $t0, displayAddress #cargar la direccion de memoria donde se guarda el primer pixel
    li $t1, 0x00FF00 #color verde
    li $t4, 0x000000 #color negro
-   addi $t5, $t0, 14592 #direccion de spawneo de la nave
+   addi $t5, $t0, 14336 #direccion de spawneo de la nave
+   
+   li $s4, 0 #posicion de la nave (en el eje x)
    
    move $a0, $t5
    move $a1, $t1
  
    jal pintarNave
   
- loop:
+ juego:
 	lw $s0, 0($t2)   #conocer si una tecla fue presionada
-	beq $s0, $zero, loop #si no fue presionada repetir el loop
+	beq $s0, $zero, juego #si no fue presionada repetir el loop
 	lw $s2, 0($t3) #cargar la tecla presionada en ascii
 	beq $s2, 0x00000061, letraA #si la tecla fue a, ir a las instrucciones correspondientes
-	bne $s2, 0x00000064, loop #si la tecla no fue d, ni las anteriores, repetir el loop
-	beq $s4, 31, loop #si ya está muy a la derecha, no puede moverse más
+	beq $s2, 0x00000020, espacio #si la tecla fue espacio, ir a las instrucciones correspondientes
+	bne $s2, 0x00000064, juego #si la tecla no fue d, ni las anteriores, repetir el loop
+	beq $s4, 53, juego #si ya está muy a la derecha, no puede moverse más
+	addi $s4, $s4, 1 #aumentar posicion x en 10
 	#llamado funcion pintar (posicionActual,negro)
+	move $a0, $t5
 	move $a1, $t4 #guardar negro como argumento
 	jal pintarNave
-	addi $a0, $a0, 4 #aumentar en 4 el offset de la direccion del pixel
+	addi $t5, $t5, 4 #aumentar en 4 el offset de la direccion del pixel
+	move $a0, $t5
 	#llamado funcion pintar (posicionActual,verde)
 	move $a1, $t1 #guardar verde como argumento
 	jal pintarNave
-	j loop #repetir
+	j juego #repetir
 
 letraA:
+	beq $s4, 0, juego #si ya está muy a la izquierda, no puede moverse más
 	#llamado funcion pintar (posicionActual,negro)
+	move $a0, $t5
 	move $a1, $t4 #guardar negro como argumento
 	jal pintarNave
-	addi $a0, $a0, -4 #disminuir en 4 el offset de la direccion del pixel
-	#llamado funcion pintar (posicionActual,verde)
+	addi $t5, $t5, -4 #disminuir en 4 el offset de la direccion del pixel
+	addi $s4, $s4, -1 #disminuir posicion x en 1
+	#llamado funcion pintar (posicionActual,verde) 
+	move $a0, $t5
 	move $a1, $t1 #guardar verde como argumento
 	jal pintarNave
-	j loop #repetir
+	j juego #repetir
 
+espacio:
+	 move $a0, $t5 #direccion de spawneo de naves
+	 jal disparo
+	 j juego
+
+#funciones  
+
+disparo:
+#a0 = direccion de inicio  
+	li $t7, 0xFFFFFF #color blanco  
+	addi $t6, $a0, 20 #centra el disparo de la nave
+	addi $t8, $t6, -2560
+loop:
+	beq $t6, $t8, exit
+	addi $t6, $t6, -256
+
+	sw $t7, 0($t6)
+
+	j loop
+
+exit:
+	jr $ra
 
 pintarNave: 
+#a0 = direccion de inicio
+#a1 = color
 #altura 0 → +192*0 = 0
 sw $a1, 20($a0)
 
 #altura 1 → +192*1 = 192
 sw $a1, 272($a0)
-sw $a1, 276($a0)
+sw $a1, 276($a0) 
 sw $a1, 280($a0)
 
 #altura 2 → +192*2 = 384
