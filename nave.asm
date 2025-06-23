@@ -11,6 +11,18 @@
    
    li $s4, 0 #posicion de la nave (en el eje x)
    
+   #Prueba de la creacion de alien1 y 2
+   move $a0, $t0
+   move $a1, $t1
+   jal pintarAlien1 
+   
+   addi $t0,$t0,52
+   move $a0, $t0
+   move $a1, $t1
+   jal pintarAlien2 
+   addi $t0,$t0,-52
+   
+   
    move $a0, $t5
    move $a1, $t1
  
@@ -76,20 +88,20 @@ exit:
 pintarNave: 
 #a0 = direccion de inicio
 #a1 = color
-#altura 0 → +192*0 = 0
+#altura 0 → +256*0 = 0
 sw $a1, 20($a0)
 
-#altura 1 → +192*1 = 192
+#altura 1 → +256*1 = 256
 sw $a1, 272($a0)
 sw $a1, 276($a0) 
 sw $a1, 280($a0)
 
-#altura 2 → +192*2 = 384
+#altura 2 → +256*2 = 512
 sw $a1, 528($a0)
 sw $a1, 532($a0)
 sw $a1, 536($a0)
 
-#altura 3 → +192*3 = 576
+#altura 3 → +256*3 = 768
 sw $a1, 772($a0)
 sw $a1, 776($a0)
 sw $a1, 780($a0)
@@ -100,7 +112,7 @@ sw $a1, 796($a0)
 sw $a1, 800($a0)
 sw $a1, 804($a0)
 
-#altura 4 → +192*4 = 768
+#altura 4 → +256*4 = 1024
 sw $a1, 1024($a0)
 sw $a1, 1028($a0)
 sw $a1, 1032($a0)
@@ -113,7 +125,7 @@ sw $a1, 1056($a0)
 sw $a1, 1060($a0)
 sw $a1, 1064($a0)
 
-#altura 5 → +192*5 = 960
+#altura 5 → +256*5 = 1280
 sw $a1, 1280($a0)
 sw $a1, 1284($a0)
 sw $a1, 1288($a0)
@@ -126,7 +138,7 @@ sw $a1, 1312($a0)
 sw $a1, 1316($a0)
 sw $a1, 1320($a0)
 
-#altura 6 → +192*6 = 1152
+#altura 6 → +256*6 = 1536
 sw $a1, 1536($a0)
 sw $a1, 1540($a0)
 sw $a1, 1544($a0)
@@ -148,3 +160,155 @@ jr $ra
    #syscall 
    
   
+pintarAlien1: 
+#a0 = direccion de inicio
+#a1 = color
+#altura 0 → +256*0 = 0
+sw $a1, 16($a0)
+sw $a1, 20($a0)
+sw $a1, 24($a0)
+sw $a1, 28($a0)
+
+#altura 1 → +256*1 = 256
+sw $a1, 260($a0)
+sw $a1, 264($a0) 
+sw $a1, 268($a0)
+sw $a1, 272($a0)
+sw $a1, 276($a0)
+sw $a1, 280($a0)
+sw $a1, 284($a0)
+sw $a1, 288($a0)
+sw $a1, 292($a0)
+sw $a1, 296($a0)
+
+#altura 2 → +256*2 = 512
+sw $a1, 512($a0)
+sw $a1, 516($a0)
+sw $a1, 520($a0)
+sw $a1, 524($a0)
+sw $a1, 528($a0)
+sw $a1, 532($a0)
+sw $a1, 536($a0)
+sw $a1, 540($a0)
+sw $a1, 544($a0)
+sw $a1, 548($a0)
+sw $a1, 552($a0)
+sw $a1, 556($a0)
+
+
+#altura 3 → +256*3 = 768
+sw $a1, 768($a0)
+sw $a1, 772($a0)
+sw $a1, 776($a0)
+sw $a1, 788($a0)
+sw $a1, 792($a0)
+sw $a1, 804($a0)
+sw $a1, 808($a0)
+sw $a1, 812($a0)
+
+#altura 4 → +256*4 = 1024
+sw $a1, 1024($a0)
+sw $a1, 1028($a0)
+sw $a1, 1032($a0)
+sw $a1, 1036($a0)
+sw $a1, 1040($a0)
+sw $a1, 1044($a0)
+sw $a1, 1048($a0)
+sw $a1, 1052($a0)
+sw $a1, 1056($a0)
+sw $a1, 1060($a0)
+sw $a1, 1064($a0)
+sw $a1, 1068($a0)
+
+#altura 5 → +256*5 = 1280
+sw $a1, 1292($a0)
+sw $a1, 1296($a0)
+sw $a1, 1308($a0)
+sw $a1, 1312($a0)
+
+#altura 6 → +256*6 = 1536
+sw $a1, 1544($a0)
+sw $a1, 1548($a0)
+sw $a1, 1556($a0)
+sw $a1, 1560($a0)
+sw $a1, 1568($a0)
+sw $a1, 1572($a0)
+
+#altura 7 → +256*7 = 1792
+sw $a1, 1792($a0)
+sw $a1, 1796($a0)
+sw $a1, 1832($a0)
+sw $a1, 1836($a0)
+
+jr $ra
+
+pintarAlien2: 
+#a0 = dirección de inicio
+#a1 = color
+
+#altura 0 → +256*0 = 0
+sw $a1, 8($a0)
+sw $a1, 32($a0)
+
+#altura 1 → +256*1 = 256
+sw $a1, 268($a0)
+sw $a1, 284($a0)
+
+#altura 2 → +256*2 = 512
+sw $a1, 520($a0)
+sw $a1, 524($a0)
+sw $a1, 528($a0)
+sw $a1, 532($a0)
+sw $a1, 536($a0)
+sw $a1, 540($a0)
+sw $a1, 544($a0)
+
+
+#altura 3 → +256*3 = 768
+sw $a1, 772($a0)
+sw $a1, 776($a0)
+sw $a1, 784($a0)
+sw $a1, 788($a0)
+sw $a1, 792($a0)
+sw $a1, 800($a0)
+sw $a1, 804($a0)
+
+#altura 4 → +256*4 = 1024
+sw $a1, 1024($a0)
+sw $a1, 1028($a0)
+sw $a1, 1032($a0)
+sw $a1, 1036($a0)
+sw $a1, 1040($a0)
+sw $a1, 1044($a0)
+sw $a1, 1048($a0)
+sw $a1, 1052($a0)
+sw $a1, 1056($a0)
+sw $a1, 1060($a0)
+sw $a1, 1064($a0)
+
+#altura 5 → +256*5 = 1280
+sw $a1, 1280($a0)
+sw $a1, 1288($a0)
+sw $a1, 1292($a0)
+sw $a1, 1296($a0)
+sw $a1, 1300($a0)
+sw $a1, 1304($a0)
+sw $a1, 1308($a0)
+sw $a1, 1312($a0)
+sw $a1, 1320($a0)
+
+
+#altura 6 → +256*6 = 1536
+sw $a1, 1536($a0)
+sw $a1, 1544($a0)
+sw $a1, 1568($a0)
+sw $a1, 1576($a0)
+
+#altura 7 → +256*7 = 1792
+sw $a1, 1804($a0)
+sw $a1, 1808($a0)
+sw $a1, 1816($a0)
+sw $a1, 1820($a0)
+
+jr $ra
+
