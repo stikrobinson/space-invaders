@@ -11,6 +11,9 @@
    
    li $s4, 0 #posicion de la nave (en el eje x)
    
+   li $s5, 0 #esta Disparando?
+   li $s6, 0 #direccion disparo
+   
    #Prueba de la creacion de alien1 y 2
    move $a0, $t0
    move $a1, $t1
@@ -29,6 +32,16 @@
    jal pintarNave
   
  juego:
+ 	move $a0, $s6
+	move $a1, $s5
+	jal actualizarDisparo
+	move $s6, $v0 
+	beq $s6, $zero, cambiar
+ 	
+ 	addi $s5, $s5, 1
+ 
+ subjuego:
+ 	
 	lw $s0, 0($t2)   #conocer si una tecla fue presionada
 	beq $s0, $zero, juego #si no fue presionada repetir el loop
 	lw $s2, 0($t3) #cargar la tecla presionada en ascii
@@ -48,9 +61,13 @@
 	jal pintarNave
 	j juego #repetir
 
+cambiar:
+	li $s5, 0
+	j subjuego
+
 letraA:
 	beq $s4, 0, juego #si ya está muy a la izquierda, no puede moverse más
-	#llamado funcion pintar (posicionActual,negro)
+	#llamado funcion pintar (posicionActual,negro) 
 	move $a0, $t5
 	move $a1, $t4 #guardar negro como argumento
 	jal pintarNave
@@ -63,27 +80,46 @@ letraA:
 	j juego #repetir
 
 espacio:
+	 bne $s5, $zero, juego
 	 move $a0, $t5 #direccion de spawneo de naves
+	 move $a1, $s5
 	 jal disparo
+	 move $s6, $v0  #direccion que maneja el disparo
+	 li $s5, 1
 	 j juego
 
 #funciones  
 
 disparo:
-#a0 = direccion de inicio  
 	li $t7, 0xFFFFFF #color blanco  
-	addi $t6, $a0, 20 #centra el disparo de la nave
-	addi $t8, $t6, -2560
-loop:
-	beq $t6, $t8, exit
-	addi $t6, $t6, -256
-
+	addi $t6, $a0, -236 #centra el disparo de la nave
 	sw $t7, 0($t6)
+	sw $t7, -256($t6)
+	move $v0, $t6
+	jr $ra
+	
 
-	j loop
-
+actualizarDisparo:
+	beq $a0, $zero, exit
+	beq $a1, 60, alternative
+	li $t7, 0xFFFFFF #color blanco  
+	li $t9, 0x000000 #color negro  
+	sw $t9, 0($a0)
+	addi $t6, $a0, -256 #subir el disparo de la nave
+	sw $t7, -256($t6)
+	
+	li $a0, 5
+ 	li $v0, 32
+   	syscall
+   	
+   	move $v0, $t6
 exit:
 	jr $ra
+
+alternative:
+	li $v0, 0
+	jr $ra
+	
 
 pintarNave: 
 #a0 = direccion de inicio
