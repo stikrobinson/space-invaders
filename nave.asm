@@ -1,125 +1,137 @@
 .data
-	displayAddress:	.word 0x10008000
+    displayAddress:         .word 0x10008000
+
+    addrTeclaPresionada:    .word 0xffff0000   # dirección de memoria donde se almacena si la tecla fue presionada
+    addrCodigoTecla:        .word 0xffff0004   # dirección de memoria donde se almacena la tecla presionada (ASCII)
+
+    colorVerde:             .word 0x00FF00     # color verde
+    colorNegro:             .word 0x000000     # color negro
+    colorBlanco:            .word 0xFFFFFF     # color blanco
 
 .text
-   li $t2, 0xffff0000  #direccion de memoria donde se almacena si la tecla fue presionada
-   li $t3, 0xffff0004  #direccion de memoria donde se almacena la tecla presionada
-   lw $t0, displayAddress #cargar la direccion de memoria donde se guarda el primer pixel
-   li $t1, 0x00FF00 #color verde
-   li $t4, 0x000000 #color negro
-   addi $t5, $t0, 14336 #direccion de spawneo de la nave
-   
-   li $s4, 0 #posicion de la nave (en el eje x)
-   
-   li $s5, 0 #esta Disparando?
-   li $s6, 0 #direccion disparo
-   
-   #Prueba de la creacion de alien1 y 2
-   move $a0, $t0
-   move $a1, $t1
-   jal pintarAlien1 
-   
-   addi $t0,$t0,52
-   move $a0, $t0
-   move $a1, $t1
-   jal pintarAlien2 
-   addi $t0,$t0,-52
-   
-   
-   move $a0, $t5
-   move $a1, $t1
- 
-   jal pintarNave
-  
- juego:
- 	move $a0, $s6
-	move $a1, $s5
-	jal actualizarDisparo
-	move $s6, $v0 
-	beq $s6, $zero, cambiar
- 	
- 	addi $s5, $s5, 1
- 
- subjuego:
- 	
-	lw $s0, 0($t2)   #conocer si una tecla fue presionada
-	beq $s0, $zero, juego #si no fue presionada repetir el loop
-	lw $s2, 0($t3) #cargar la tecla presionada en ascii
-	beq $s2, 0x00000061, letraA #si la tecla fue a, ir a las instrucciones correspondientes
-	beq $s2, 0x00000020, espacio #si la tecla fue espacio, ir a las instrucciones correspondientes
-	bne $s2, 0x00000064, juego #si la tecla no fue d, ni las anteriores, repetir el loop
-	beq $s4, 53, juego #si ya está muy a la derecha, no puede moverse más
-	addi $s4, $s4, 1 #aumentar posicion x en 10
-	#llamado funcion pintar (posicionActual,negro)
-	move $a0, $t5
-	move $a1, $t4 #guardar negro como argumento
-	jal pintarNave
-	addi $t5, $t5, 4 #aumentar en 4 el offset de la direccion del pixel
-	move $a0, $t5
-	#llamado funcion pintar (posicionActual,verde)
-	move $a1, $t1 #guardar verde como argumento
-	jal pintarNave
-	j juego #repetir
+    lw $t0, displayAddress        # $t0 = dirección base del display
+    lw $t1, colorVerde            # $t1 = color verde
+    lw $t2, addrTeclaPresionada  # $t2 = dirección de memoria donde se almacena si la tecla fue presionada
+    lw $t3, addrCodigoTecla      # $t3 = dirección donde se almacena la tecla presionada (ASCII)
+    lw $t4, colorNegro           # $t4 = color negro
+
+    li $s0, 0     # $s0 = posición de la nave (en el eje x)
+    li $s1, 0     # $s1 = ¿está disparando?
+    li $s2, 0     # $s2 = dirección del disparo
+    addi $s3, $t0, 14336         # $s3 = dirección de spawneo de la nave
+
+    # Prueba de la creación de alien1 y 2
+    move $a0, $t0
+    move $a1, $t1
+    jal pintarAlien1 
+
+    addi $t0, $t0, 52
+    move $a0, $t0
+    move $a1, $t1
+    jal pintarAlien2 
+    addi $t0, $t0, -52
+
+    move $a0, $s3              # posición actual de la nave
+    move $a1, $t1              # color verde
+    jal pintarNave
+
+juego:
+    move $a0, $s2              # dirección del disparo
+    move $a1, $s1              # ¿está disparando?
+    jal actualizarDisparo
+    move $s2, $v0              # actualizar dirección del disparo
+    beq $s2, $zero, cambiar
+
+    addi $s1, $s1, 1           # aumentar estado de disparo
+
+subjuego:
+    lw $t5, 0($t2)             # conocer si una tecla fue presionada
+    beq $t5, $zero, juego      # si no fue presionada, repetir el loop
+
+    lw $t6, 0($t3)             # cargar la tecla presionada en ASCII
+    beq $t6, 0x00000061, letraA    # si la tecla fue 'a', ir a instrucciones correspondientes
+    beq $t6, 0x00000020, espacio   # si la tecla fue espacio, ir a instrucciones correspondientes
+    bne $t6, 0x00000064, juego     # si la tecla no fue 'd', ni las anteriores, repetir el loop
+    beq $s0, 53, juego             # si ya está muy a la derecha, no puede moverse más
+
+    addi $s0, $s0, 1               # aumentar posición x en 1
+
+    # llamado función pintar (posiciónActual, negro)
+    move $a0, $s3
+    move $a1, $t4                  # guardar negro como argumento
+    jal pintarNave
+
+    addi $s3, $s3, 4               # aumentar en 4 el offset de la dirección del pixel
+    move $a0, $s3
+
+    # llamado función pintar (posiciónActual, verde)
+    move $a1, $t1                  # guardar verde como argumento
+    jal pintarNave
+    j juego                        # repetir
 
 cambiar:
-	li $s5, 0
-	j subjuego
+    li $s1, 0                      # reiniciar estado de disparo
+    j subjuego
 
 letraA:
-	beq $s4, 0, juego #si ya está muy a la izquierda, no puede moverse más
-	#llamado funcion pintar (posicionActual,negro) 
-	move $a0, $t5
-	move $a1, $t4 #guardar negro como argumento
-	jal pintarNave
-	addi $t5, $t5, -4 #disminuir en 4 el offset de la direccion del pixel
-	addi $s4, $s4, -1 #disminuir posicion x en 1
-	#llamado funcion pintar (posicionActual,verde) 
-	move $a0, $t5
-	move $a1, $t1 #guardar verde como argumento
-	jal pintarNave
-	j juego #repetir
+    beq $s0, 0, juego              # si ya está muy a la izquierda, no puede moverse más
+
+    # llamado función pintar (posiciónActual, negro)
+    move $a0, $s3
+    move $a1, $t4                  # guardar negro como argumento
+    jal pintarNave
+
+    addi $s3, $s3, -4              # disminuir en 4 el offset de la dirección del pixel
+    addi $s0, $s0, -1              # disminuir posición x en 1
+
+    # llamado función pintar (posiciónActual, verde)
+    move $a0, $s3
+    move $a1, $t1                  # guardar verde como argumento
+    jal pintarNave
+    j juego                        # repetir
 
 espacio:
-	 bne $s5, $zero, juego
-	 move $a0, $t5 #direccion de spawneo de naves
-	 move $a1, $s5
-	 jal disparo
-	 move $s6, $v0  #direccion que maneja el disparo
-	 li $s5, 1
-	 j juego
+    bne $s1, $zero, juego          # si ya está disparando, ignorar
 
-#funciones  
+    move $a0, $s3                  # dirección de spawneo de la nave
+    move $a1, $s1
+    jal disparo
+    move $s2, $v0                  # dirección que maneja el disparo
+    li $s1, 1                      # activar estado de disparo
+    j juego
+
+# funciones
 
 disparo:
-	li $t7, 0xFFFFFF #color blanco  
-	addi $t6, $a0, -236 #centra el disparo de la nave
-	sw $t7, 0($t6)
-	sw $t7, -256($t6)
-	move $v0, $t6
-	jr $ra
-	
+    lw $t7, colorBlanco            # color blanco  
+    addi $t6, $a0, -236            # centrar el disparo de la nave
+    sw $t7, 0($t6)
+    sw $t7, -256($t6)
+    move $v0, $t6
+    jr $ra
 
 actualizarDisparo:
-	beq $a0, $zero, exit
-	beq $a1, 60, alternative
-	li $t7, 0xFFFFFF #color blanco  
-	li $t9, 0x000000 #color negro  
-	sw $t9, 0($a0)
-	addi $t6, $a0, -256 #subir el disparo de la nave
-	sw $t7, -256($t6)
-	
-	li $a0, 5
- 	li $v0, 32
-   	syscall
-   	
-   	move $v0, $t6
+    beq $a0, $zero, exit
+    beq $a1, 60, alternative
+
+    lw $t7, colorBlanco            # color blanco
+    lw $t8, colorNegro             # color negro
+    sw $t8, 0($a0)
+    addi $t6, $a0, -256            # subir el disparo de la nave
+    sw $t7, -256($t6)
+
+    li $a0, 5
+    li $v0, 32
+    syscall
+
+    move $v0, $t6
 exit:
-	jr $ra
+    jr $ra
 
 alternative:
-	li $v0, 0
-	jr $ra
-	
+    li $v0, 0
+    jr $ra
+
 
 pintarNave: 
 #a0 = direccion de inicio
