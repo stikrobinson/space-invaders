@@ -9,28 +9,37 @@
     colorBlanco:            .word 0xFFFFFF     # color blanco
 
 .text
+# temporales para cargar de memoria y como variables auxiliares
     lw $t0, displayAddress        # $t0 = dirección base del display
     lw $t1, colorVerde            # $t1 = color verde
     lw $t2, addrTeclaPresionada  # $t2 = dirección de memoria donde se almacena si la tecla fue presionada
     lw $t3, addrCodigoTecla      # $t3 = dirección donde se almacena la tecla presionada (ASCII)
     lw $t4, colorNegro           # $t4 = color negro
 
+# seguras para manejar el estado del juego 
     li $s0, 0     # $s0 = posición de la nave (en el eje x)
     li $s1, 0     # $s1 = ¿está disparando?
     li $s2, 0     # $s2 = dirección del disparo
     addi $s3, $t0, 14336         # $s3 = dirección de spawneo de la nave
 
-    # Prueba de la creación de alien1 y 2
+# Prueba de la creación de alien1 y 2
     move $a0, $t0
     move $a1, $t1
-    jal pintarAlien1 
+    jal pintarAliens1
+    
+    addi $t0, $t0, 2560
+    move $a0, $t0 
+    jal pintarAliens2
+    
+    addi $t0, $t0, 2560
+    move $a0, $t0 
+    jal pintarAliens1
+    
+    addi $t0, $t0, 2560
+    move $a0, $t0 
+    jal pintarAliens2
 
-    addi $t0, $t0, 52
-    move $a0, $t0
-    move $a1, $t1
-    jal pintarAlien2 
-    addi $t0, $t0, -52
-
+dibujarNave:
     move $a0, $s3              # posición actual de la nave
     move $a1, $t1              # color verde
     jal pintarNave
@@ -208,9 +217,14 @@ jr $ra
    #syscall 
    
   
-pintarAlien1: 
+pintarAliens1: 
 #a0 = direccion de inicio
 #a1 = color
+    li $t5, 0
+pintarAlien1:
+    beq $t5, 5, finPintarAlien1
+
+
 #altura 0 → +256*0 = 0
 sw $a1, 16($a0)
 sw $a1, 20($a0)
@@ -288,11 +302,19 @@ sw $a1, 1796($a0)
 sw $a1, 1832($a0)
 sw $a1, 1836($a0)
 
+addi $t5, $t5, 1 
+addi $a0, $a0, 52
+j pintarAlien1
+
+finPintarAlien1:
 jr $ra
 
-pintarAlien2: 
+pintarAliens2: 
 #a0 = dirección de inicio
 #a1 = color
+    li $t5, 0
+pintarAlien2:
+    beq $t5, 5, finPintarAlien2
 
 #altura 0 → +256*0 = 0
 sw $a1, 8($a0)
@@ -358,5 +380,10 @@ sw $a1, 1808($a0)
 sw $a1, 1816($a0)
 sw $a1, 1820($a0)
 
+addi $t5, $t5, 1 
+addi $a0, $a0, 52
+j pintarAlien2
+
+finPintarAlien2:
 jr $ra
 
