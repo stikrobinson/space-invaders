@@ -1,4 +1,8 @@
 .data
+    coordenadasX: .word 0, 14, 28, 42, 0, 14, 28, 42, 0, 14, 28, 42, 0, 14, 28, 42
+    coordenadasY: .word 0, 0, 0, 0, 10, 10, 10, 10, 20, 20, 20, 20, 30, 30, 30, 30
+    estadoAliens: .word 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+    
     displayAddress:         .word 0x10008000
 
     addrTeclaPresionada:    .word 0xffff0000   # dirección de memoria donde se almacena si la tecla fue presionada
@@ -9,39 +13,18 @@
     colorBlanco:            .word 0xFFFFFF     # color blanco
 
 .text
-# temporales para cargar de memoria y como variables auxiliares
-    lw $t0, displayAddress        # $t0 = dirección base del display
-    lw $t1, colorVerde            # $t1 = color verde
-    lw $t2, addrTeclaPresionada  # $t2 = dirección de memoria donde se almacena si la tecla fue presionada
-    lw $t3, addrCodigoTecla      # $t3 = dirección donde se almacena la tecla presionada (ASCII)
-    lw $t4, colorNegro           # $t4 = color negro
-
 # seguras para manejar el estado del juego 
+    lw $t0, displayAddress  
     li $s0, 0     # $s0 = posición de la nave (en el eje x)
     li $s1, 0     # $s1 = ¿está disparando?
     li $s2, 0     # $s2 = dirección del disparo
     addi $s3, $t0, 14336         # $s3 = dirección de spawneo de la nave
 
-# Prueba de la creación de alien1 y 2
-    move $a0, $t0
-    move $a1, $t1
-    jal pintarAliens1
-    
-    addi $t0, $t0, 2560
-    move $a0, $t0 
-    jal pintarAliens2
-    
-    addi $t0, $t0, 2560
-    move $a0, $t0 
-    jal pintarAliens1
-    
-    addi $t0, $t0, 2560
-    move $a0, $t0 
-    jal pintarAliens2
+    jal pintarAliens
 
 dibujarNave:
     move $a0, $s3              # posición actual de la nave
-    move $a1, $t1              # color verde
+    lw $a1, colorVerde             # color verde
     jal pintarNave
 
 juego:
@@ -54,9 +37,11 @@ juego:
     addi $s1, $s1, 1           # aumentar estado de disparo
 
 subjuego:
+    lw $t2, addrTeclaPresionada  # $t2 = dirección de memoria donde se almacena si la tecla fue presionada
     lw $t5, 0($t2)             # conocer si una tecla fue presionada
     beq $t5, $zero, juego      # si no fue presionada, repetir el loop
 
+    lw $t3, addrCodigoTecla      # $t3 = dirección donde se almacena la tecla presionada (ASCII)
     lw $t6, 0($t3)             # cargar la tecla presionada en ASCII
     beq $t6, 0x00000061, letraA    # si la tecla fue 'a', ir a instrucciones correspondientes
     beq $t6, 0x00000020, espacio   # si la tecla fue espacio, ir a instrucciones correspondientes
@@ -67,14 +52,14 @@ subjuego:
 
     # llamado función pintar (posiciónActual, negro)
     move $a0, $s3
-    move $a1, $t4                  # guardar negro como argumento
+    lw $a1, colorNegro                # guardar negro como argumento
     jal pintarNave
 
     addi $s3, $s3, 4               # aumentar en 4 el offset de la dirección del pixel
     move $a0, $s3
 
     # llamado función pintar (posiciónActual, verde)
-    move $a1, $t1                  # guardar verde como argumento
+    lw $a1, colorVerde                 # guardar verde como argumento
     jal pintarNave
     j juego                        # repetir
 
@@ -87,7 +72,7 @@ letraA:
 
     # llamado función pintar (posiciónActual, negro)
     move $a0, $s3
-    move $a1, $t4                  # guardar negro como argumento
+    lw $a1, colorNegro                 # guardar negro como argumento
     jal pintarNave
 
     addi $s3, $s3, -4              # disminuir en 4 el offset de la dirección del pixel
@@ -95,7 +80,7 @@ letraA:
 
     # llamado función pintar (posiciónActual, verde)
     move $a0, $s3
-    move $a1, $t1                  # guardar verde como argumento
+    lw $a1, colorVerde                 # guardar verde como argumento
     jal pintarNave
     j juego                        # repetir
 
@@ -129,9 +114,17 @@ actualizarDisparo:
     addi $t6, $a0, -256            # subir el disparo de la nave
     sw $t7, -256($t6)
 
-    li $a0, 5
-    li $v0, 32
-    syscall
+    #li $a0, 5
+    #li $v0, 32
+    #syscall
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+    
+    li $a0, 15000
+    jal retardo
+    
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
 
     move $v0, $t6
 exit:
@@ -217,14 +210,10 @@ jr $ra
    #syscall 
    
   
-pintarAliens1: 
+pintarAlien1: 
 #a0 = direccion de inicio
 #a1 = color
-    li $t5, 0
-pintarAlien1:
-    beq $t5, 5, finPintarAlien1
-
-
+    
 #altura 0 → +256*0 = 0
 sw $a1, 16($a0)
 sw $a1, 20($a0)
@@ -302,20 +291,12 @@ sw $a1, 1796($a0)
 sw $a1, 1832($a0)
 sw $a1, 1836($a0)
 
-addi $t5, $t5, 1 
-addi $a0, $a0, 52
-j pintarAlien1
-
-finPintarAlien1:
 jr $ra
 
-pintarAliens2: 
+pintarAlien2: 
 #a0 = dirección de inicio
 #a1 = color
-    li $t5, 0
-pintarAlien2:
-    beq $t5, 5, finPintarAlien2
-
+    
 #altura 0 → +256*0 = 0
 sw $a1, 8($a0)
 sw $a1, 32($a0)
@@ -380,10 +361,76 @@ sw $a1, 1808($a0)
 sw $a1, 1816($a0)
 sw $a1, 1820($a0)
 
-addi $t5, $t5, 1 
-addi $a0, $a0, 52
-j pintarAlien2
-
-finPintarAlien2:
 jr $ra
 
+retardo:
+#a0: numero de iteraciones (retardo)
+li $t9, 0 
+bucle:
+bge $t9, $a0, salida # Si alcanzamos el límite, realizamos una acción
+addi $t9, $t9, 1
+j bucle
+
+salida:
+jr $ra
+
+pintarAliens:
+   lw $t0, displayAddress 
+   la $t1, coordenadasX
+   la $t2, coordenadasY
+   li $t3, 0
+
+lazo:    
+    lw $t4, 0($t1)
+    lw $t5, 0($t2)
+
+    sll $t4, $t4, 2
+    sll $t5, $t5, 8
+    
+    add $t6, $t4, $t5
+    add $t6, $t6, $t0
+    
+    li $t7, 4
+    div $t3, $t7
+    mflo $t8
+    
+    move $a0, $t6
+    lw $a1, colorVerde
+    
+    beq $t8, 1, pintarFilaPar
+    beq $t8, 3, pintarFilaPar
+    
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+    jal pintarAlien1
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    
+    addi $t1, $t1, 4
+    addi $t2, $t2, 4
+    
+    beq $t3, 15, salidaPintarAliens
+    
+    addi $t3, $t3, 1
+    
+    j lazo
+    
+pintarFilaPar:
+    
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+    jal pintarAlien2
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    
+    addi $t1, $t1, 4
+    addi $t2, $t2, 4
+    
+    beq $t3, 15, salidaPintarAliens
+    
+    addi $t3, $t3, 1
+    
+    j lazo
+
+salidaPintarAliens: 
+    jr $ra
