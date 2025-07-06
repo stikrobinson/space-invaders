@@ -42,15 +42,12 @@ juego:
     li $a0, 30000
     jal retardo
     
-   #beq $s4, 0, moverIzquierdaBranch
-   #jal moverAliensDerecha
-   #j cambiarDisparo
+   beq $s4, 0, moverIzquierdaBranch
+   jal moverAliensDerecha
+   j cambiarDisparo
  
-   #moverIzquierdaBranch:
-   #jal moverAliensIzquierda
-   
-   lw $a0, colorVerde
-   jal pintarAliens
+   moverIzquierdaBranch:
+   jal moverAliensIzquierda
   
  cambiarDisparo:
     beq $s2, $zero, cambiar
@@ -804,6 +801,7 @@ lazoVerificarColision:
     
     lw $t6, displayAddress
     
+    #verificacion en eje X
     sub $t6, $s2, $t6
     sll $t5, $s1, 8
     sub $t5, $t6, $t5
@@ -813,9 +811,15 @@ lazoVerificarColision:
     beq $t8, 0, pasarVerificacion
     
     addi $t4, $t4, 10
-    #addi $t6, $t6, 2048
     
     slt $t8, $t5, $t4
+    beq $t8, 0, pasarVerificacion
+    
+    #verificacion en eje Y
+    lw $t5, 0($t2)
+    addi $t5, $t5, 9
+    
+    slt $t8, $s1, $t5
     beq $t8, 0, pasarVerificacion
     
     sw $zero, 0($t9)
@@ -828,6 +832,8 @@ verificarFilaPar:
     
     lw $t6, displayAddress
     
+    #verificacion en eje X
+    
     sub $t6, $s2, $t6
     sll $t5, $s1, 8
     sub $t5, $t6, $t5
@@ -837,9 +843,15 @@ verificarFilaPar:
     beq $t8, 0, pasarVerificacion
     
     addi $t4, $t4, 11
-    #addi $t6, $t6, 2048
     
     slt $t8, $t5, $t4
+    beq $t8, 0, pasarVerificacion
+    
+    #verificacion en eje Y
+    lw $t5, 0($t2)
+    addi $t5, $t5, 9
+    
+    slt $t8, $s1, $t5
     beq $t8, 0, pasarVerificacion
     
     sw $zero, 0($t9)
