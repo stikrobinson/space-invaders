@@ -2,6 +2,7 @@
     final: .asciiz "Fin de la partida!\nLos aliens llegaron por ti!\n"   
     sinVidas: .asciiz "Fin de la partida!\nPerdistes todas las vidas!\n"  
     puntuacion: .asciiz "Puntuación final: " 
+    terminado: .asciiz "Ganaste la partida!\nDerrotastes a todos los aliens!\n" 
 
     coordenadasX: .word 0, 14, 28, 42, 0, 14, 28, 42, 0, 14, 28, 42, 0, 14, 28, 42
     coordenadasY: .word 0, 0, 0, 0, 10, 10, 10, 10, 20, 20, 20, 20, 30, 30, 30, 30
@@ -56,7 +57,8 @@ juego:
     
     jal verificarColisionDisparoNave
     
-    beq $s5, 0, finDelJuego
+    beq $s5, 0, perderJuego
+    beq $s6, 16, finDelJuego
     
     li $a0, 30000
     jal retardo
@@ -130,7 +132,7 @@ espacio:
     li $s1, 54                      # activar estado de disparo
     j juego
     
-finDelJuego:
+perderJuego:
    li $v0, 4           
    la $a0, sinVidas     
    syscall 
@@ -145,6 +147,20 @@ finDelJuego:
    li $v0, 10     # Código de syscall para terminar el programa
    syscall        # Llamada al sistema
  
+finDelJuego:
+   li $v0, 4           
+   la $a0, terminado     
+   syscall 
+           
+   la $a0, puntuacion     
+   syscall 
+   
+   move $a0, $s6   # Cargar el valor de la variable en $a0
+   li $v0, 1        # Código de syscall para imprimir entero
+   syscall          # Ejecutar syscall
+   
+   li $v0, 10     # Código de syscall para terminar el programa
+   syscall        # Llamada al sistema
 
 #############
 # funciones #
@@ -847,6 +863,8 @@ lazoVerificarColision:
     lw $ra, 0($sp)
     addi $sp, $sp, 4
     
+    addi $s6, $s6, 1
+    
     j salidaVerificacion
     
 verificarFilaPar:
@@ -905,6 +923,8 @@ verificarFilaPar:
     jal pintarAlien2
     lw $ra, 0($sp)
     addi $sp, $sp, 4
+    
+    addi $s6, $s6, 1
     
     j salidaVerificacion
     
