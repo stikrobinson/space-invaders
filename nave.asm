@@ -1057,8 +1057,16 @@ verificarColisionDisparoNave:
   
   slt $t8, $t3, $t1
   beq $t8, 0, saltarVerificacionDisparoNave
+	
+  lw $a0, colorNegro
+    
+  addi $sp, $sp, -4
+  sw $ra, 0($sp)
+  jal pintarDisparoAlien
+  lw $ra, 0($sp)
+  addi $sp, $sp, 4
   
-  
+  sw $zero, 4($t0)
   
   addi $s5 $s5, -1 
   
