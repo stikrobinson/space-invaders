@@ -1,5 +1,7 @@
 .data
-    final: .asciiz "Fin de la partida!\n"   
+    final: .asciiz "Fin de la partida!\nLos aliens llegaron por ti!\n"   
+    sinVidas: .asciiz "Fin de la partida!\nPerdistes todas las vidas!\n"  
+    puntuacion: .asciiz "Puntuación final: " 
 
     coordenadasX: .word 0, 14, 28, 42, 0, 14, 28, 42, 0, 14, 28, 42, 0, 14, 28, 42
     coordenadasY: .word 0, 0, 0, 0, 10, 10, 10, 10, 20, 20, 20, 20, 30, 30, 30, 30
@@ -18,13 +20,15 @@
     colorRojo: 	            .word 0xFF0000     # color rojo
 
 .text
-# seguras para manejar el estado del juego
+# seguras y globales para manejar el estado del juego
     lw $t0, displayAddress  
     li $s0, 0     # $s0 = posición de la nave (en el eje x)
     li $s1, 55     # $s1 = altura del disparo (si vale 55 es porque no está disparando)
     li $s2, 0     # $s2= dirección del disparo
     addi $s3, $t0, 14336         # $s3 = dirección de spawneo de la nave
     li $s4, 1     # $s4 = dirección del movimiento de los aliens (1=derecha, 0=izquierda)
+    li $s5, 3     #  $s5 = vidas del juego
+    li $s6, 0     # $s6 = puntuacion del juego
 	
     lw $a0, colorVerde
     jal pintarAliens
@@ -35,6 +39,7 @@ dibujarNave:
     jal pintarNave
 
 juego:
+
    jal disparoAlien
    
    lw $a0, colorRojo
@@ -50,6 +55,8 @@ juego:
     jal verificarColisionDisparo
     
     jal verificarColisionDisparoNave
+    
+    beq $s5, 0, finDelJuego
     
     li $a0, 30000
     jal retardo
@@ -122,6 +129,22 @@ espacio:
     move $s2, $v0                  # dirección que maneja el disparo
     li $s1, 54                      # activar estado de disparo
     j juego
+    
+finDelJuego:
+   li $v0, 4           
+   la $a0, sinVidas     
+   syscall 
+           
+   la $a0, puntuacion     
+   syscall 
+   
+   move $a0, $s6   # Cargar el valor de la variable en $a0
+   li $v0, 1        # Código de syscall para imprimir entero
+   syscall          # Ejecutar syscall
+   
+   li $v0, 10     # Código de syscall para terminar el programa
+   syscall        # Llamada al sistema
+ 
 
 #############
 # funciones #
@@ -739,6 +762,13 @@ limiteY:
    la $a0, final     
    syscall 
    
+   la $a0, puntuacion     
+   syscall 
+   
+   move $a0, $s6   # Cargar el valor de la variable en $a0
+   li $v0, 1        # Código de syscall para imprimir entero
+   syscall          # Ejecutar syscall
+   
    li $v0, 10     # Código de syscall para terminar el programa
    syscall        # Llamada al sistema
  
@@ -1028,9 +1058,9 @@ verificarColisionDisparoNave:
   slt $t8, $t3, $t1
   beq $t8, 0, saltarVerificacionDisparoNave
   
-   li $v0, 4           
-   la $a0, final     
-   syscall 
+  
+  
+  addi $s5 $s5, -1 
   
 saltarVerificacionDisparoNave:
   jr $ra
