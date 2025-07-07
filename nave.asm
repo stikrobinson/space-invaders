@@ -5,6 +5,8 @@
     coordenadasY: .word 0, 0, 0, 0, 10, 10, 10, 10, 20, 20, 20, 20, 30, 30, 30, 30
     estadoAliens: .word 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
     
+    coordenadasDisparoAlien: .word 0, 0
+    
     displayAddress:         .word 0x10008000
 
     addrTeclaPresionada:    .word 0xffff0000   # dirección de memoria donde se almacena si la tecla fue presionada
@@ -13,6 +15,7 @@
     colorVerde:             .word 0x00FF00     # color verde
     colorNegro:             .word 0x000000     # color negro
     colorBlanco:            .word 0xFFFFFF     # color blanco
+    colorRojo: 	            .word 0xFF0000     # color rojo
 
 .text
 # seguras para manejar el estado del juego
@@ -32,12 +35,21 @@ dibujarNave:
     jal pintarNave
 
 juego:
+   jal disparoAlien
+   
+   lw $a0, colorRojo
+   jal pintarDisparoAlien
+   
+   jal moverDisparoAlien
+
     move $a0, $s2              # dirección del disparo
     move $a1, $s1              # ¿está disparando? 
     
     jal actualizarDisparo
     move $s2, $v0
     jal verificarColisionDisparo
+    
+    jal verificarColisionDisparoNave
     
     li $a0, 30000
     jal retardo
@@ -80,7 +92,7 @@ subjuego:
     jal pintarNave
     j juego                        # repetir
 
-cambiar:
+cambiar:    
     li $s1, 55                      # reiniciar estado de disparo
     j subjuego
 
@@ -125,7 +137,7 @@ disparo:
 
 actualizarDisparo:
     beq $a0, $zero, alternative
-    beq $a1, $zero, alternative
+    beq $a1, $zero, reiniciar
 
     lw $t7, colorBlanco            # color blanco
     lw $t8, colorNegro             # color negro
@@ -148,6 +160,11 @@ actualizarDisparo:
 
     move $v0, $t6
     jr $ra
+    
+reiniciar:
+    lw $t4, colorNegro
+    sw $t4, 0($s2)
+    sw $t4, -256($s2)
 
 alternative:
     li $v0, 0
@@ -420,7 +437,7 @@ lazo:
     
     lw $t7, 0($t9)
     
-    beq $t7, 0, casosSkip
+    beq $t7, 0, skip
     
     move $a0, $t6
     
@@ -444,11 +461,6 @@ lazo:
     
     j lazo
     
-casosSkip:
-    beq $t8, 1, skipPar
-    beq $t8, 3, skipPar
-    j skipImpar
-    
 pintarFilaPar:
     
     move $a0, $t6
@@ -458,56 +470,8 @@ pintarFilaPar:
     jal pintarAlien2
     lw $ra, 0($sp)
     addi $sp, $sp, 4
-    
-    addi $t1, $t1, 4
-    addi $t2, $t2, 4
-    addi $t9, $t9, 4
-    
-    beq $t3, 15, salidaPintarAliens
-    
-    addi $t3, $t3, 1
-    
-    j lazo
-
-skipImpar:
-    
-    addi $sp, $sp, -8
-    sw $ra, 0($sp)
-    sw $a1, 4($sp)
-    
-    move $a0, $t6
-    lw $a1, colorNegro
-    
-
-    jal pintarAlien1
-    lw $ra, 0($sp)
-    lw $a1, 4($sp)
-    addi $sp, $sp, 8 
-    
-
-    addi $t1, $t1, 4
-    addi $t2, $t2, 4
-    addi $t9, $t9, 4
-    
-    beq $t3, 15, salidaPintarAliens
-    
-    addi $t3, $t3, 1
-    
-    j lazo
-    
-skipPar:
-    addi $sp, $sp, -8
-    sw $ra, 0($sp)
-    sw $a1, 4($sp)
-
-    move $a0, $t6
-    lw $a1, colorNegro
-    
-    jal pintarAlien2
-    lw $ra, 0($sp)
-    lw $a1, 4($sp)
-    addi $sp, $sp, 8 
-
+ 
+skip:
     addi $t1, $t1, 4
     addi $t2, $t2, 4
     addi $t9, $t9, 4
@@ -817,14 +781,41 @@ lazoVerificarColision:
     
     #verificacion en eje Y
     lw $t5, 0($t2)
-    addi $t5, $t5, 9
     
+    slt $t8, $t5, $s1
+    beq $t8, 0, pasarVerificacion
+    
+    addi $t5, $t5, 9
     slt $t8, $s1, $t5
     beq $t8, 0, pasarVerificacion
     
     sw $zero, 0($t9)
     
     li $s1, 1
+    
+    lw $t4, colorNegro
+    
+    sw $t4, 0($s2)
+    sw $t4, -256($s2)
+    
+    lw $t4, 0($t1)
+    lw $t5, 0($t2)
+
+    sll $t4, $t4, 2
+    sll $t5, $t5, 8
+    
+    add $t6, $t4, $t5
+    add $t6, $t6, $t0
+    
+    move $a0, $t6
+    
+    lw $a1, colorNegro
+    
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+    jal pintarAlien1
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
     
     j salidaVerificacion
     
@@ -849,14 +840,41 @@ verificarFilaPar:
     
     #verificacion en eje Y
     lw $t5, 0($t2)
-    addi $t5, $t5, 9
     
+    slt $t8, $t5, $s1
+    beq $t8, 0, pasarVerificacion
+    
+    addi $t5, $t5, 9
     slt $t8, $s1, $t5
     beq $t8, 0, pasarVerificacion
     
     sw $zero, 0($t9)
     
     li $s1, 1
+    
+    lw $t4, colorNegro
+    
+    sw $t4, 0($s2)
+    sw $t4, -256($s2)
+    
+    lw $t4, 0($t1)
+    lw $t5, 0($t2)
+
+    sll $t4, $t4, 2
+    sll $t5, $t5, 8
+    
+    add $t6, $t4, $t5
+    add $t6, $t6, $t0
+    
+    move $a0, $t6
+    
+    lw $a1, colorNegro
+    
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+    jal pintarAlien2
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
     
     j salidaVerificacion
     
@@ -876,7 +894,146 @@ pasarVerificacion:
 salidaVerificacion: 
     jr $ra
   
+disparoAlien:
+   la $t0, coordenadasDisparoAlien
+   lw $t1, 4($t0) # y de coordenada
+   la $t2, coordenadasX
+   la $t3, coordenadasY
+   la $t4, estadoAliens
+   
+   #verificar si bay un disparo de Alien 
+   bne $t1, 0, salidaDisparoAlien
+   
+   li $t5, 15
+   
+   #itere 
+bucleDeterminarAlien:
+   sll $t1, $t5, 2
+   add $t6, $t1, $t2 
+   add $t7, $t1, $t3 
+   add $t8, $t1, $t4
+   
+   lw $t9, 0($t8)
+   beq $t9, $zero, repetirBucleDeterminarAlien
+   
+   lw $t1, 0($t6)
+   
+   addi $t1, $t1, 5
+   
+   sw $t1, 0($t0)
+   
+   lw $t1, 0($t7)
+   
+   addi $t1, $t1, 8
+   
+   sw $t1, 4($t0)
+   
+   j salidaDisparoAlien
+   
+repetirBucleDeterminarAlien:
+   
+   beq $t5, 0, salidaDisparoAlien
+   addi $t5, $t5, -1
+   
+   j bucleDeterminarAlien
+   
+salidaDisparoAlien:
+  jr $ra
+   
+   
+pintarDisparoAlien:
+  #a0: color del disparo
+   li $t3, 0
+   la $t0, coordenadasDisparoAlien
+   lw $t1, 4($t0) # y de coordenada
+   lw $t2, 0($t0) # x de coordenada
+   
+   #verificar si bay un disparo de Alien 
+   beq $t1, 0, salidaPintarDisparoAlien
+   beq $t1, 63, reestablecerDisparoAlien
+   
+   sll $t2, $t2, 2
+   sll $t1, $t1, 8
+   
+   add $t3, $t2, $t1
+   
+   lw $t4, displayAddress
+   add $t3, $t3, $t4
+   
+   sw $a0, 0($t3)
+   sw $a0, 256($t3)
+   
+   j salidaPintarDisparoAlien
+   
+reestablecerDisparoAlien:
+   sw $zero, 4($t0)
 
- 
- 
+salidaPintarDisparoAlien:
+   jr $ra
+  
+  
+moverDisparoAlien:
+   la $t0, coordenadasDisparoAlien
+   lw $t1, 4($t0) # y de coordenada
+   lw $t2, 0($t0) # x de coordenada
+   
+   #verificar si bay un disparo de Alien 
+   beq $t1, 0, salidaMoverDisparoAlien
+   
+   lw $a0, colorNegro
+   
+   addi $sp, $sp, -4
+   sw $ra, 0($sp)
+   jal pintarDisparoAlien
+   lw $ra, 0($sp)
+   addi $sp, $sp, 4
+   
+   lw $a0, colorRojo
+   
+   lw $t1, 4($t0) # y de coordenada
+   addi $t1, $t1, 1
+   sw $t1, 4($t0)
+   
+   addi $sp, $sp, -4
+   sw $ra, 0($sp)
+   jal pintarDisparoAlien
+   lw $ra, 0($sp)
+   addi $sp, $sp, 4
+   
+   li $a0, 15000
+   
+   addi $sp, $sp, -4
+   sw $ra, 0($sp)
+   jal retardo
+   lw $ra, 0($sp)
+   addi $sp, $sp, 4
+   
+salidaMoverDisparoAlien:
+   jr $ra
 
+verificarColisionDisparoNave:
+  la $t0, coordenadasDisparoAlien
+  
+  lw $t1, 0($t0)
+  slt $t8, $s0, $t1
+  beq $t8, 0, saltarVerificacionDisparoNave
+  
+  addi $t2, $s0, 11
+  slt $t8, $t1, $t2
+  beq $t8, 0, saltarVerificacionDisparoNave
+  
+  lw $t1, 4($t0) 
+  li $t3, 56
+  
+  slt $t8, $t3, $t1
+  beq $t8, 0, saltarVerificacionDisparoNave
+  
+   li $v0, 4           
+   la $a0, final     
+   syscall 
+  
+saltarVerificacionDisparoNave:
+  jr $ra
+ 
+   
+   
