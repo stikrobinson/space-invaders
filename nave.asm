@@ -1,16 +1,35 @@
+# Descripción del programa:
+# Es un programa que recrea el videojuego Space-Invaders en ensamblador MIPS.
+#
+# Configuración inicial antes de ejecutar el programa:
+# 1. Usar Bitmap Display que está en Tools y debe ser configurado como:
+# Unit Width in Pixels: 4
+# Unit Height in Pixels: 4
+# Display Width in Pixels: 256
+# Display Height in Pixels: 256
+# Base address for display: 0x10008000 ($gp)
+# También, dar click en Connect to MIPS
+#
+# 2. Usar Keyboard and Display MMIO Simulator que está en Tools y debe ser configurado como: 
+# Dar click en Connect to MIPS
+# Las entradas de teclado se escriben en el área de texto de KEYBOARD
+
+
 .data
+    # Mensaje a mostrar en consola
     final: .asciiz "Fin de la partida!\nLos aliens llegaron por ti!\n"   
     sinVidas: .asciiz "Fin de la partida!\nPerdistes todas las vidas!\n"  
     puntuacion: .asciiz "Puntuación final: " 
     terminado: .asciiz "Ganaste la partida!\nDerrotastes a todos los aliens!\n" 
-
-    coordenadasX: .word 0, 14, 28, 42, 0, 14, 28, 42, 0, 14, 28, 42, 0, 14, 28, 42
-    coordenadasY: .word 0, 0, 0, 0, 10, 10, 10, 10, 20, 20, 20, 20, 30, 30, 30, 30
-    estadoAliens: .word 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
     
-    coordenadasDisparoAlien: .word 0, 0
+    # Arreglos con la información de los aliens
+    coordenadasX: .word 0, 14, 28, 42, 0, 14, 28, 42, 0, 14, 28, 42, 0, 14, 28, 42 # Ubicación en X de cada alien
+    coordenadasY: .word 0, 0, 0, 0, 10, 10, 10, 10, 20, 20, 20, 20, 30, 30, 30, 30 # Ubicación en Y de cada alien
+    estadoAliens: .word 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 # Si el alien está vivo o muerto
     
-    displayAddress:         .word 0x10008000
+    coordenadasDisparoAlien: .word 0, 0  # El primer elemento es el X del disparo y el segundo es el Y del disparo
+    
+    displayAddress:         .word 0x10008000  # dirección de memoria desde la que se muestran los pixels
 
     addrTeclaPresionada:    .word 0xffff0000   # dirección de memoria donde se almacena si la tecla fue presionada
     addrCodigoTecla:        .word 0xffff0004   # dirección de memoria donde se almacena la tecla presionada (ASCII)
@@ -21,7 +40,7 @@
     colorRojo: 	            .word 0xFF0000     # color rojo
 
 .text
-# seguras y globales para manejar el estado del juego
+    # registros seguros que sirven de variables globales para manejar el estado del juego
     lw $t0, displayAddress  
     li $s0, 0     # $s0 = posición de la nave (en el eje x)
     li $s1, 55     # $s1 = altura del disparo (si vale 55 es porque no está disparando)
@@ -30,39 +49,51 @@
     li $s4, 1     # $s4 = dirección del movimiento de los aliens (1=derecha, 0=izquierda)
     li $s5, 3     #  $s5 = vidas del juego
     li $s6, 0     # $s6 = puntuacion del juego
-	
-    lw $a0, colorVerde
+    
+    #Llamada para inicializar los aliens	
+    lw $a0, colorVerde   # color de los aliens
     jal pintarAliens
-
+    
+    #Llamada para inicializar la nave
 dibujarNave: 
-    move $a0, $s3              # posición actual de la nave
-    lw $a1, colorVerde             # color verde 
+    move $a0, $s3             # posición actual de la nave
+    lw $a1, colorVerde        # color verde 
     jal pintarNave
 
+# Bucle principal del juego
 juego:
-
+   
+   # Llamada para inicializar el disparo del alien
    jal disparoAlien
    
-   lw $a0, colorRojo
+   # Llamada para pintar el disparo del alien
+   lw $a0, colorRojo  # color del disparo
    jal pintarDisparoAlien
    
+   # Llamada para mover el disparo del alien
    jal moverDisparoAlien
 
     move $a0, $s2              # dirección del disparo
-    move $a1, $s1              # ¿está disparando? 
+    move $a1, $s1              # altura del disparo en Y
     
+    # Llamada para mover el disparo de la nave
     jal actualizarDisparo
-    move $s2, $v0
-    jal verificarColisionDisparo
+    move $s2, $v0  # la dirección del disparo tras la actualización
     
+    # Llamada para verificar la colisión del disparo de la nave hacia el alien
+    jal verificarColisionDisparo
+    # Llamada para verificar la colisión del disparo del alien hacia la nave
     jal verificarColisionDisparoNave
     
+    # Terminar el juego si se pierden todas las vidas o se eliminan todos los aliens
     beq $s5, 0, perderJuego
     beq $s6, 16, finDelJuego
     
-    li $a0, 30000
+    # Llamada para una función que duerma el programa
+    li $a0, 30000 # tiempo de retardo
     jal retardo
     
+   # Llamada a la función del movimiento de los aliens, según su dirección de movimiento
    beq $s4, 0, moverIzquierdaBranch
    jal moverAliensDerecha
    j cambiarDisparo
@@ -70,6 +101,7 @@ juego:
    moverIzquierdaBranch:
    jal moverAliensIzquierda
   
+  # Reinicia el disparo si ya terminó o lo cambia si toda no
  cambiarDisparo:
     beq $s2, $zero, cambiar
     addi $s1, $s1, -1           # aumentar estado de disparo
@@ -131,8 +163,10 @@ espacio:
     move $s2, $v0                  # dirección que maneja el disparo
     li $s1, 54                      # activar estado de disparo
     j juego
-    
+     
+   # El usuario pierde la partida por no tener vidas
 perderJuego:
+  # Syscalls para imprimir en consola
    li $v0, 4           
    la $a0, sinVidas     
    syscall 
@@ -147,7 +181,9 @@ perderJuego:
    li $v0, 10     # Código de syscall para terminar el programa
    syscall        # Llamada al sistema
  
+    # El usuario gana la partida al derrotar todos los aliens
 finDelJuego:
+   # Syscalls para imprimir en consola
    li $v0, 4           
    la $a0, terminado     
    syscall 
@@ -167,6 +203,8 @@ finDelJuego:
 #############
 
 disparo:
+    # Crea el disparo
+    # Sin parámetros
     lw $t7, colorBlanco            # color blanco  
     addi $t6, $a0, -236            # centrar el disparo de la nave
     sw $t7, 0($t6)
@@ -175,7 +213,10 @@ disparo:
     jr $ra
 
 actualizarDisparo:
-    beq $a0, $zero, alternative
+    # Mueve el disparo
+    # $a0: dirección del disparo
+    # $a1: altura del disparo en Y
+    beq $a0, $zero, alternativo
     beq $a1, $zero, reiniciar
 
     lw $t7, colorBlanco            # color blanco
@@ -185,9 +226,6 @@ actualizarDisparo:
     addi $t6, $a0, -256            # subir el disparo de la nave
     sw $t7, -256($t6)
 
-    #li $a0, 5
-    #li $v0, 32
-    #syscall
     addi $sp, $sp, -4
     sw $ra, 0($sp)
     
@@ -205,12 +243,13 @@ reiniciar:
     sw $t4, 0($s2)
     sw $t4, -256($s2)
 
-alternative:
+alternativo:
     li $v0, 0
     jr $ra
 
 
 pintarNave: 
+# Muestra la nave en pantalla
 #a0 = direccion de inicio
 #a1 = color
 #altura 0 → +256*0 = 0
@@ -286,6 +325,7 @@ jr $ra
    
   
 pintarAlien1: 
+# Muestra uno de los aliens en pantalla
 #a0 = direccion de inicio
 #a1 = color
     
@@ -369,6 +409,7 @@ sw $a1, 1836($a0)
 jr $ra
 
 pintarAlien2: 
+# Muestra otro de los aliens en pantalla
 #a0 = dirección de inicio
 #a1 = color
     
@@ -439,6 +480,7 @@ sw $a1, 1820($a0)
 jr $ra
 
 retardo:
+# Sirve para dormir el programa
 #a0: numero de iteraciones (retardo)
 li $t9, 0 
 bucle:
@@ -450,6 +492,7 @@ salida:
 jr $ra
 
 pintarAliens:
+   # Pinta todos los aliens de la partida
    #a0: color
    lw $t0, displayAddress 
    la $t1, coordenadasX
@@ -476,7 +519,7 @@ lazo:
     
     lw $t7, 0($t9)
     
-    beq $t7, 0, skip
+    beq $t7, 0, salto
     
     move $a0, $t6
     
@@ -510,7 +553,7 @@ pintarFilaPar:
     lw $ra, 0($sp)
     addi $sp, $sp, 4
  
-skip:
+salto:
     addi $t1, $t1, 4
     addi $t2, $t2, 4
     addi $t9, $t9, 4
@@ -525,6 +568,7 @@ salidaPintarAliens:
     jr $ra
 
 moverAliensDerecha:
+  # Desplaza todos los aliens vivos a la derecha
  
  lw $a0, colorNegro
  addi $sp, $sp, -4
@@ -582,6 +626,7 @@ salidaMoverDerecha:
   jr $ra
  
 maximo:
+ # Saca el mayor valor de un arreglo de coordenadas X
  la $t0, coordenadasX
  la $t3, estadoAliens
  li $t2, 0
@@ -612,7 +657,7 @@ salidaBuscarMaximo:
  jr $ra
  
 moverAliensIzquierda:
- 
+ # Desplaza todos los aliens vivos a la izquierda
  lw $a0, colorNegro
  addi $sp, $sp, -4
  sw $ra, 0($sp)
@@ -671,6 +716,7 @@ salidaMoverIzquierda:
   jr $ra 
  
 minimo:
+  # Saca el menor valor de un arreglo de coordenadas X
  la $t0, coordenadasX
  la $t3, estadoAliens
  li $t2, 0
@@ -701,6 +747,7 @@ salidaBuscarMinimo:
  jr $ra
  
 maximoY:
+   # Saca el mayor valor de un arreglo de coordenadas Y
  la $t0, coordenadasY
  la $t3, estadoAliens
  li $t2, 0
@@ -731,7 +778,7 @@ salidaBuscarMaximoY:
  jr $ra
  
 bajarAliens:
- 
+     # Hace que los aliens se desplazen hacia abajo
   lw $a0, colorNegro
   addi $sp, $sp, -4
   sw $ra, 0($sp)
@@ -789,6 +836,7 @@ limiteY:
    syscall        # Llamada al sistema
  
 verificarColisionDisparo:
+   # Verifica la colisión del disparo de la nave para eliminar los aliens
    lw $t0, displayAddress
    la $t1, coordenadasX
    la $t2, coordenadasY
@@ -945,6 +993,7 @@ salidaVerificacion:
     jr $ra
   
 disparoAlien:
+    # Genera el disparo del alien
    la $t0, coordenadasDisparoAlien
    lw $t1, 4($t0) # y de coordenada
    la $t2, coordenadasX
@@ -992,6 +1041,7 @@ salidaDisparoAlien:
    
    
 pintarDisparoAlien:
+  # Pinta el disparo del alien
   #a0: color del disparo
    li $t3, 0
    la $t0, coordenadasDisparoAlien
@@ -1023,6 +1073,7 @@ salidaPintarDisparoAlien:
   
   
 moverDisparoAlien:
+    # Mueve el disparo del alien
    la $t0, coordenadasDisparoAlien
    lw $t1, 4($t0) # y de coordenada
    lw $t2, 0($t0) # x de coordenada
@@ -1062,6 +1113,7 @@ salidaMoverDisparoAlien:
    jr $ra
 
 verificarColisionDisparoNave:
+  # Verifica si el disparo del alien debe hacer daño a la nave
   la $t0, coordenadasDisparoAlien
   
   lw $t1, 0($t0)
